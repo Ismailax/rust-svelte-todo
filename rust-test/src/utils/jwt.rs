@@ -1,7 +1,6 @@
 use actix_web::cookie::{Cookie, SameSite, time::Duration as CookieDuration};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use time::{Duration, OffsetDateTime};
 
 use crate::config::AppConfig;
@@ -23,11 +22,11 @@ fn same_site_from(cfg: &AppConfig) -> SameSite {
 }
 
 fn load_private_key_pem(cfg: &AppConfig) -> Result<Vec<u8>, String> {
-    fs::read(&cfg.jwt_private_key_path).map_err(|_| "read_private_key_failed".to_string())
+    Ok(cfg.jwt_private_key_pem.as_bytes().to_vec())
 }
 
 fn load_public_key_pem(cfg: &AppConfig) -> Result<Vec<u8>, String> {
-    fs::read(&cfg.jwt_public_key_path).map_err(|_| "read_public_key_failed".to_string())
+    Ok(cfg.jwt_public_key_pem.as_bytes().to_vec())
 }
 
 pub fn create_access_token(user_id: i32, cfg: &AppConfig) -> Result<String, String> {
