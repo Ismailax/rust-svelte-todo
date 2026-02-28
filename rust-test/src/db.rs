@@ -52,6 +52,9 @@ pub async fn get_db_pool() -> DbPool {
             Ok(pool) => return pool,
             Err(e) => {
                 eprintln!("DB not ready (attempt {attempt}/10): {e}");
+                eprintln!(
+                    "DB connect target host={db_host} resolved_host={host_for_url} port={port_for_url}"
+                );
                 sleep(Duration::from_secs(1)).await;
             }
         }
