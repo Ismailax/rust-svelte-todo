@@ -1,0 +1,99 @@
+name: test-project
+
+services:
+  db:
+    image: postgres:18-bookworm
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./rust-test/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - internal
+
+  pgadmin:
+    image: dpage/pgadmin4:9.9
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./rust-test
+      dockerfile: Dockerfile
+    container_name: rust-backend
+    restart: always
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - ./rust-test/keys:/app/keys:ro
+    networks:
+      - internal
+
+  frontend:
+    build:
+      context: ./svelte-test
+      dockerfile: Dockerfile.prod
+    container_name: svelte-frontend
+    restart: always
+    environment:
+      - ORIGIN=${FRONTEND_ORIGIN}
+      - PORT=${FRONTEND_PORT}
+    env_file:
+      - ./.env
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    depends_on:
+      - backend
+    # volumes:
+    #   - ./svelte-test:/app
+    #   - /app/node_modules
+    networks:
+      - internal
+
+    # reverse-proxy:
+    #   image: nginx:1.28-bookworm
+    #   container_name: nginx-reverse-proxy
+    #   restart: always
+    #   ports:
+    #     - "80:80"
+    #   depends_on:
+    #     - frontend
+    #     - backend
+    #   volumes:
+    #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    #   networks:
+    #     - internal
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  internal:
+    driver: bridge

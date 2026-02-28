@@ -1,0 +1,47 @@
+# ---------- Build stage ----------
+FROM node:24-bookworm-slim AS builder
+
+WORKDIR /app
+
+# ติดตั้ง deps
+COPY package*.json ./
+RUN npm ci
+
+# คัดลอกโค้ดทั้งหมด
+COPY . .
+
+# build SvelteKit ด้วย adapter-node → ได้โฟลเดอร์ build/
+RUN npm run build
+
+# ---------- Runtime stage ----------
+FROM node:24-bookworm-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# ติดตั้งเฉพาะ production deps
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# คัดลอกไฟล์ build ที่ build ไว้แล้ว
+COPY --from=builder /app/build ./build
+
+# คัดลอกไฟล์ static ที่จำเป็น
+COPY --from=builder /app/static ./static 
+
+CMD ["node", "build/index.js"]
+
+# # # ---------- Build stage ----------
+# FROM oven/bun:latest AS builder
+# WORKDIR /app
+# COPY package*.json ./
+# RUN bun install
+# COPY . .
+# RUN bun run build
+
+# # # ---------- Runtime stage ----------
+# FROM oven/bun:latest
+# WORKDIR /app
+# COPY package*.json ./
+# COPY --from=builder /app/build ./build
+# COPY --from=builder /app/static ./static 
+# CMD ["bun", "run", "build/index.js"]
