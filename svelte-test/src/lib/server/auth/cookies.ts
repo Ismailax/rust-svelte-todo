@@ -5,7 +5,7 @@ export const setAuthCookie = (cookies: Cookies, token: string) => {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure: false,
+		secure: true,
 		maxAge: 60 * 60
 	});
 };
@@ -15,6 +15,6 @@ export const clearAuthCookie = (cookies: Cookies) => {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure: false
+		secure: true
 	});
 };
