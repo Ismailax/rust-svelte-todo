@@ -14,7 +14,7 @@ fn get_user_id(req: &actix_web::HttpRequest, cfg: &AppConfig) -> Result<i32, Htt
     let claims = verify_token(&token, cfg).map_err(|_| HttpResponse::Unauthorized().finish())?;
 
     claims
-        .sub
+        .id
         .parse::<i32>()
         .map_err(|_| HttpResponse::Unauthorized().finish())
 }

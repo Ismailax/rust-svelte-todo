@@ -7,7 +7,8 @@ use crate::config::AppConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,
+    pub id: String,
+    pub username: String,
     pub iat: i64,
     pub exp: i64,
     pub iss: String,
@@ -29,12 +30,17 @@ fn load_public_key_pem(cfg: &AppConfig) -> Result<Vec<u8>, String> {
     Ok(cfg.jwt_public_key_pem.as_bytes().to_vec())
 }
 
-pub fn create_access_token(user_id: i32, cfg: &AppConfig) -> Result<String, String> {
+pub fn create_access_token(
+    user_id: i32,
+    username: &str,
+    cfg: &AppConfig,
+) -> Result<String, String> {
     let now = OffsetDateTime::now_utc();
     let exp = now + Duration::seconds(cfg.jwt_access_ttl_secs);
 
     let claims = Claims {
-        sub: user_id.to_string(),
+        id: user_id.to_string(),
+        username: username.to_string(),
         iat: now.unix_timestamp(),
         exp: exp.unix_timestamp(),
         iss: cfg.jwt_issuer.clone(),
@@ -52,7 +58,7 @@ pub fn verify_token(token: &str, cfg: &AppConfig) -> Result<Claims, String> {
     let key = DecodingKey::from_ec_pem(&public_pem).map_err(|_| "bad_public_key".to_string())?;
 
     let mut v = Validation::new(Algorithm::ES256);
-    v.set_required_spec_claims(&["exp", "iat", "iss", "sub"]);
+    v.set_required_spec_claims(&["exp", "iat", "iss", "id", "username"]);
     v.validate_exp = true;
     v.set_issuer(&[cfg.jwt_issuer.clone()]);
 

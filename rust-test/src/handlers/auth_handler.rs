@@ -23,7 +23,7 @@ pub async fn register_handler(
     )
     .await
     {
-        Ok(user) => match create_access_token(user.id, &cfg) {
+        Ok(user) => match create_access_token(user.id, &user.username, &cfg) {
             Ok(token) => {
                 let cookie = build_auth_cookie(&token, &cfg);
                 HttpResponse::Created().cookie(cookie).json(AuthResponse {
@@ -46,7 +46,7 @@ pub async fn login_handler(
     let body = payload.into_inner();
 
     match auth_service::login(pool.get_ref(), &body.username, &body.password).await {
-        Ok(user) => match create_access_token(user.id, &cfg) {
+        Ok(user) => match create_access_token(user.id, &user.username, &cfg) {
             Ok(token) => {
                 let cookie = build_auth_cookie(&token, &cfg);
                 HttpResponse::Ok().cookie(cookie).json(AuthResponse {
@@ -76,7 +76,7 @@ pub async fn me_handler(
         Err(_) => return HttpResponse::Unauthorized().body("invalid_token"),
     };
 
-    let uid = match claims.sub.parse::<i32>() {
+    let uid = match claims.id.parse::<i32>() {
         Ok(v) => v,
         Err(_) => return HttpResponse::BadRequest().body("invalid_user_id"),
     };

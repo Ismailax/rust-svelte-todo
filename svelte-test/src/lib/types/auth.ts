@@ -1,10 +1,10 @@
 import type { User } from './user';
 
-export type AuthResponse = {
+export interface AuthResponse {
 	message: string;
 	user: User;
 	token: string;
-};
+}
 
 export interface LogoutResponse {
 	message: string;
