@@ -1,2 +1,2 @@
-import { env } from '$env/dynamic/private';
-export const API_URL = env.BACKEND_URL;
+import { BACKEND_URL } from '$env/static/private';
+export const API_URL = BACKEND_URL;
